@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="pt-BR" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explorador do Sistema Solar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Exo+2:wght@300;400;600&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    * {
+      font-family: 'Exo 2', sans-serif;
+    }
+    
+    .title-font {
+      font-family: 'Orbitron', monospace;
+    }
+    
+    .space-bg {
+      background: radial-gradient(ellipse at center, #0a0a1a 0%, #000005 100%);
+      overflow: hidden;
+    }
+    
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle var(--duration) ease-in-out infinite;
+    }
+    
+    @keyframes twinkle {
+      0%, 100% { opacity: var(--base-opacity); transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    
+    .planet {
+      position: absolute;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      transform-style: preserve-3d;
+    }
+    
+    .planet:hover {
+      transform: scale(1.15);
+    }
+    
+    .earth {
+      background: linear-gradient(135deg, #1e5799 0%, #2989d8 25%, #1e5799 50%, #207cca 75%, #1e5799 100%);
+      box-shadow: 
+        inset -20px -10px 40px rgba(0,0,0,0.5),
+        inset 10px 5px 20px rgba(255,255,255,0.2),
+        0 0 60px rgba(100,180,255,0.4);
+    }
+    
+    .earth::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: 
+        radial-gradient(circle at 30% 30%, transparent 40%, rgba(34,139,34,0.4) 45%, transparent 50%),
+        radial-gradient(circle at 60% 50%, transparent 35%, rgba(34,139,34,0.3) 40%, transparent 45%),
+        radial-gradient(circle at 40% 70%, transparent 30%, rgba(34,139,34,0.35) 35%, transparent 40%);
+    }
+    
+    .earth::after {
+      content: '';
+      position: absolute;
+      width: 120%;
+      height: 120%;
+      top: -10%;
+      left: -10%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 50%);
+    }
+    
+    .moon {
+      background: linear-gradient(135deg, #c0c0c0 0%, #808080 50%, #606060 100%);
+      box-shadow: 
+        inset -8px -4px 15px rgba(0,0,0,0.6),
+        inset 4px 2px 8px rgba(255,255,255,0.3),
+        0 0 20px rgba(200,200,200,0.3);
+    }
+    
+    .moon::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: 
+        radial-gradient(circle at 25% 25%, rgba(80,80,80,0.6) 0%, transparent 20%),
+        radial-gradient(circle at 60% 35%, rgba(80,80,80,0.4) 0%, transparent 15%),
+        radial-gradient(circle at 45% 65%, rgba(80,80,80,0.5) 0%, transparent 18%),
+        radial-gradient(circle at 70% 70%, rgba(80,80,80,0.3) 0%, transparent 12%);
+    }
+    
+    .mars {
+      background: linear-gradient(135deg, #c1440e 0%, #8b0000 30%, #cd5c5c 60%, #8b0000 100%);
+      box-shadow: 
+        inset -25px -12px 50px rgba(0,0,0,0.5),
+        inset 12px 6px 25px rgba(255,200,150,0.3),
+        0 0 50px rgba(255,100,50,0.3);
+    }
+    
+    .mars::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: 
+        radial-gradient(circle at 35% 40%, rgba(139,69,19,0.4) 0%, transparent 25%),
+        radial-gradient(circle at 55% 55%, rgba(139,69,19,0.3) 0%, transparent 20%);
+    }
+    
+    .sun {
+      background: radial-gradient(circle, #fff5c0 0%, #ffcc00 30%, #ff9900 60%, #ff6600 100%);
+      box-shadow: 
+        0 0 80px #ffcc00,
+        0 0 120px #ff9900,
+        0 0 180px rgba(255,150,0,0.5);
+      animation: pulse-sun 4s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-sun {
+      0%, 100% { box-shadow: 0 0 80px #ffcc00, 0 0 120px #ff9900, 0 0 180px rgba(255,150,0,0.5); }
+      50% { box-shadow: 0 0 100px #ffcc00, 0 0 150px #ff9900, 0 0 220px rgba(255,150,0,0.6); }
+    }
+    
+    .orbit-path {
+      position: absolute;
+      border: 1px dashed rgba(255,255,255,0.15);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    
+    .info-card {
+      background: linear-gradient(135deg, rgba(10,20,40,0.95) 0%, rgba(20,40,80,0.9) 100%);
+      border: 1px solid rgba(100,150,255,0.3);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    
+    .data-row {
+      border-bottom: 1px solid rgba(100,150,255,0.1);
+    }
+    
+    .glow-text {
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    .control-btn {
+      background: linear-gradient(135deg, rgba(30,50,80,0.9) 0%, rgba(20,30,50,0.9) 100%);
+      border: 1px solid rgba(100,150,255,0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .control-btn:hover {
+      background: linear-gradient(135deg, rgba(50,80,120,0.9) 0%, rgba(30,50,80,0.9) 100%);
+      border-color: rgba(100,150,255,0.6);
+      box-shadow: 0 0 20px rgba(100,150,255,0.3);
+    }
+    
+    .slider-track {
+      background: linear-gradient(90deg, rgba(100,150,255,0.2) 0%, rgba(100,150,255,0.4) 100%);
+    }
+    
+    input[type="range"] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: linear-gradient(135deg, #4a90d9 0%, #2c5aa0 100%);
+      border-radius: 50%;
+      cursor: pointer;
+      margin-top: -6px;
+      box-shadow: 0 0 10px rgba(100,150,255,0.5);
+    }
+    
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+      background: rgba(100,150,255,0.3);
+      border-radius: 2px;
+    }
+    
+    .distance-line {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,200,100,0.6), transparent);
+      pointer-events: none;
+      transform-origin: left center;
+    }
+    
+    .distance-label {
+      position: absolute;
+      background: rgba(0,0,0,0.8);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #ffd700;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    
+    .educational-panel {
+      background: linear-gradient(180deg, rgba(10,15,30,0.95) 0%, rgba(5,10,20,0.98) 100%);
+      border-left: 1px solid rgba(100,150,255,0.2);
+    }
+    
+    .fact-card {
+      background: rgba(30,50,80,0.4);
+      border: 1px solid rgba(100,150,255,0.2);
+      border-radius: 8px;
+    }
+    
+    @keyframes orbit-earth {
+      from { transform: rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg); }
+      to { transform: rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg); }
+    }
+    
+    @keyframes orbit-moon {
+      from { transform: rotate(0deg) translateX(var(--moon-orbit)) rotate(0deg); }
+      to { transform: rotate(360deg) translateX(var(--moon-orbit)) rotate(-360deg); }
+    }
+    
+    @keyframes orbit-mars {
+      from { transform: rotate(0deg) translateX(var(--mars-orbit)) rotate(0deg); }
+      to { transform: rotate(360deg) translateX(var(--mars-orbit)) rotate(-360deg); }
+    }
+    
+    .orbiting-earth {
+      animation: orbit-earth var(--earth-year) linear infinite;
+    }
+    
+    .orbiting-moon {
+      animation: orbit-moon var(--moon-month) linear infinite;
+    }
+    
+    .orbiting-mars {
+      animation: orbit-mars var(--mars-year) linear infinite;
+    }
+    
+    .modal-overlay {
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(5px);
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full m-0 p-0 space-bg overflow-hidden">
+  <div id="app" class="relative w-full h-full"><!-- Stars Background -->
+   <div id="stars" class="absolute inset-0 pointer-events-none"></div><!-- Header -->
+   <header class="absolute top-0 left-0 right-0 z-30 p-4">
+    <div class="flex items-center justify-between">
+     <div>
+      <h1 id="main-title" class="title-font text-2xl md:text-3xl font-bold text-white glow-text" style="text-shadow: 0 0 20px rgba(100,150,255,0.5);">🌌 Explorador do Sistema Solar</h1>
+      <p class="text-blue-300 text-sm mt-1 opacity-80">Navegue pelo cosmos e descubra os segredos do universo</p>
+     </div><button id="info-btn" class="control-btn px-4 py-2 rounded-lg text-white text-sm flex items-center gap-2"> <span>ℹ️</span> <span id="info-btn-text">Sobre</span> </button>
+    </div>
+   </header><!-- Solar System Container -->
+   <div id="solar-system" class="absolute inset-0 flex items-center justify-center" style="transform-origin: center center;"><!-- Orbit Paths -->
+    <div id="earth-orbit" class="orbit-path"></div>
+    <div id="mars-orbit" class="orbit-path"></div><!-- Sun -->
+    <div id="sun" class="planet sun" data-body="sun"><span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-yellow-300 text-xs font-semibold whitespace-nowrap">☀️ Sol</span>
+    </div><!-- Earth System Container -->
+    <div id="earth-container" class="absolute orbiting-earth" style="--orbit-radius: 180px;">
+     <div id="earth" class="planet earth" data-body="earth"><span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-blue-300 text-xs font-semibold whitespace-nowrap">🌍 Terra</span>
+     </div><!-- Moon orbiting Earth -->
+     <div id="moon-container" class="absolute orbiting-moon" style="--moon-orbit: 50px; left: 50%; top: 50%; margin-left: -8px; margin-top: -8px;">
+      <div id="moon" class="planet moon" data-body="moon"><span class="absolute -bottom-5 left-1/2 -translate-x-1/2 text-gray-300 text-[10px] font-semibold whitespace-nowrap">🌙 Lua</span>
+      </div>
+     </div>
+    </div><!-- Mars -->
+    <div id="mars-container" class="absolute orbiting-mars" style="--mars-orbit: 280px;">
+     <div id="mars" class="planet mars" data-body="mars"><span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-red-300 text-xs font-semibold whitespace-nowrap">🔴 Marte</span>
+     </div>
+    </div>
+   </div><!-- Distance Lines Container -->
+   <div id="distance-lines" class="absolute inset-0 pointer-events-none"></div><!-- Control Panel -->
+   <div class="absolute bottom-4 left-4 right-4 md:left-4 md:right-auto md:w-80 z-20">
+    <div class="info-card rounded-xl p-4">
+     <h3 class="title-font text-blue-300 font-bold mb-3 flex items-center gap-2"><span>🎮</span> Controles</h3><!-- Zoom Control -->
+     <div class="mb-4"><label class="text-gray-300 text-sm mb-2 block flex justify-between"> <span>🔍 Zoom</span> <span id="zoom-value" class="text-blue-400">100%</span> </label> <input type="range" id="zoom-slider" min="30" max="200" value="100" class="w-full">
+     </div><!-- Speed Control -->
+     <div class="mb-4"><label class="text-gray-300 text-sm mb-2 block flex justify-between"> <span>⚡ Velocidade Orbital</span> <span id="speed-value" class="text-blue-400">1x</span> </label> <input type="range" id="speed-slider" min="0" max="100" value="50" class="w-full">
+     </div><!-- Toggle Buttons -->
+     <div class="flex gap-2 flex-wrap"><button id="toggle-orbits" class="control-btn px-3 py-2 rounded-lg text-white text-xs flex-1"> 🔵 Órbitas </button> <button id="toggle-distances" class="control-btn px-3 py-2 rounded-lg text-white text-xs flex-1"> 📏 Distâncias </button> <button id="toggle-pause" class="control-btn px-3 py-2 rounded-lg text-white text-xs flex-1"> ⏸️ Pausar </button>
+     </div>
+    </div>
+   </div><!-- Info Card (appears on planet click) -->
+   <div id="planet-info" class="absolute top-24 right-4 w-80 z-20 hidden">
+    <div class="info-card rounded-xl p-5">
+     <div class="flex items-start justify-between mb-4">
+      <div>
+       <h2 id="planet-name" class="title-font text-xl font-bold text-white"></h2>
+       <p id="planet-type" class="text-blue-400 text-sm"></p>
+      </div><button id="close-info" class="text-gray-400 hover:text-white text-xl leading-none">×</button>
+     </div>
+     <div id="planet-data" class="space-y-2"><!-- Dynamic data rows -->
+     </div>
+     <div id="planet-description" class="mt-4 text-gray-300 text-sm leading-relaxed"></div>
+     <div id="fun-fact" class="mt-4 fact-card p-3">
+      <p class="text-yellow-400 text-xs font-semibold mb-1">💡 Curiosidade</p>
+      <p id="fact-text" class="text-gray-300 text-sm"></p>
+     </div>
+    </div>
+   </div><!-- Educational Panel (Right Side) -->
+   <div id="edu-panel" class="absolute top-24 right-4 bottom-24 w-72 educational-panel rounded-xl p-4 z-10 overflow-y-auto hidden md:block">
+    <h3 class="title-font text-blue-300 font-bold mb-4 flex items-center gap-2"><span>📚</span> Mecânica Orbital</h3>
+    <div class="space-y-4">
+     <div class="fact-card p-3">
+      <h4 class="text-white font-semibold text-sm mb-2">🌀 Leis de Kepler</h4>
+      <p class="text-gray-400 text-xs leading-relaxed">Os planetas descrevem órbitas elípticas com o Sol em um dos focos. A velocidade orbital varia: mais rápida perto do Sol, mais lenta longe dele.</p>
+     </div>
+     <div class="fact-card p-3">
+      <h4 class="text-white font-semibold text-sm mb-2">🎯 Gravidade</h4>
+      <p class="text-gray-400 text-xs leading-relaxed">A força gravitacional mantém os planetas em órbita. É proporcional às massas e inversamente proporcional ao quadrado da distância.</p>
+     </div>
+     <div class="fact-card p-3">
+      <h4 class="text-white font-semibold text-sm mb-2">📐 Distâncias (UA)</h4>
+      <p class="text-gray-400 text-xs leading-relaxed">1 UA (Unidade Astronômica) = distância Terra-Sol ≈ 150 milhões de km. Marte está a ~1.52 UA do Sol.</p>
+     </div>
+     <div class="fact-card p-3">
+      <h4 class="text-white font-semibold text-sm mb-2">⏱️ Períodos Orbitais</h4>
+      <div class="text-gray-400 text-xs space-y-1 mt-2">
+       <div class="flex justify-between"><span>🌍 Terra:</span> <span class="text-blue-400">365.25 dias</span>
+       </div>
+       <div class="flex justify-between"><span>🌙 Lua:</span> <span class="text-gray-300">27.3 dias</span>
+       </div>
+       <div class="flex justify-between"><span>🔴 Marte:</span> <span class="text-red-400">687 dias</span>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- About Modal -->
+   <div id="about-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-overlay">
+    <div class="info-card rounded-2xl p-6 max-w-lg mx-4">
+     <div class="flex justify-between items-start mb-4">
+      <h2 class="title-font text-xl font-bold text-white">🌌 Sobre o Explorador</h2><button id="close-modal" class="text-gray-400 hover:text-white text-2xl leading-none">×</button>
+     </div>
+     <div class="text-gray-300 text-sm space-y-3">
+      <p>Este simulador interativo permite explorar o Sistema Solar com física realista simplificada.</p>
+      <p><strong class="text-blue-400">Como usar:</strong></p>
+      <ul class="list-disc list-inside space-y-1 text-gray-400">
+       <li>Clique em qualquer corpo celeste para ver informações</li>
+       <li>Use o controle de zoom para aproximar ou afastar</li>
+       <li>Ajuste a velocidade orbital para observar os movimentos</li>
+       <li>Ative as linhas de distância para comparar escalas</li>
+      </ul>
+      <p class="text-yellow-400 text-xs mt-4">⚠️ Nota: As escalas de tamanho e distância foram ajustadas para melhor visualização.</p>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      main_title: '🌌 Explorador do Sistema Solar',
+      info_button_text: 'Sobre',
+      background_color: '#0a0a1a',
+      surface_color: '#1e3250',
+      text_color: '#e0e7ff',
+      primary_action_color: '#4a90d9',
+      secondary_action_color: '#ffd700'
+    };
+
+    let config = { ...defaultConfig };
+
+    // Celestial body data
+    const celestialData = {
+      sun: {
+        name: 'Sol',
+        type: 'Estrela (Anã Amarela)',
+        emoji: '☀️',
+        data: [
+          { label: 'Diâmetro', value: '1.392.700 km' },
+          { label: 'Massa', value: '1,989 × 10³⁰ kg' },
+          { label: 'Temperatura', value: '5.500°C (superfície)' },
+          { label: 'Idade', value: '~4,6 bilhões de anos' },
+          { label: 'Composição', value: '73% H, 25% He' }
+        ],
+        description: 'O Sol é a estrela central do nosso sistema solar. Contém 99,86% de toda a massa do sistema e sua gravidade mantém todos os planetas em órbita.',
+        fact: 'A luz do Sol leva 8 minutos e 20 segundos para chegar à Terra!'
+      },
+      earth: {
+        name: 'Terra',
+        type: 'Planeta Rochoso',
+        emoji: '🌍',
+        data: [
+          { label: 'Diâmetro', value: '12.742 km' },
+          { label: 'Distância do Sol', value: '1 UA (149,6 mi km)' },
+          { label: 'Período Orbital', value: '365,25 dias' },
+          { label: 'Gravidade', value: '9,8 m/s²' },
+          { label: 'Satélites', value: '1 (Lua)' }
+        ],
+        description: 'Nosso lar! A Terra é o único planeta conhecido com vida. Possui água líquida na superfície e uma atmosfera rica em nitrogênio e oxigênio.',
+        fact: 'A Terra não é perfeitamente redonda - é ligeiramente achatada nos polos devido à rotação!'
+      },
+      moon: {
+        name: 'Lua',
+        type: 'Satélite Natural',
+        emoji: '🌙',
+        data: [
+          { label: 'Diâmetro', value: '3.474 km' },
+          { label: 'Distância da Terra', value: '384.400 km' },
+          { label: 'Período Orbital', value: '27,3 dias' },
+          { label: 'Gravidade', value: '1,62 m/s²' },
+          { label: 'Temperatura', value: '-173°C a 127°C' }
+        ],
+        description: 'A Lua é o único satélite natural da Terra e o quinto maior do Sistema Solar. Sua gravidade causa as marés nos oceanos terrestres.',
+        fact: 'A Lua se afasta da Terra cerca de 3,8 cm por ano!'
+      },
+      mars: {
+        name: 'Marte',
+        type: 'Planeta Rochoso',
+        emoji: '🔴',
+        data: [
+          { label: 'Diâmetro', value: '6.779 km' },
+          { label: 'Distância do Sol', value: '1,52 UA (228 mi km)' },
+          { label: 'Período Orbital', value: '687 dias' },
+          { label: 'Gravidade', value: '3,7 m/s²' },
+          { label: 'Satélites', value: '2 (Fobos e Deimos)' }
+        ],
+        description: 'O "Planeta Vermelho" deve sua cor ao óxido de ferro na superfície. Possui o maior vulcão do Sistema Solar: Monte Olimpo, com 21 km de altura!',
+        fact: 'Um dia em Marte (chamado "sol") dura apenas 37 minutos a mais que um dia na Terra!'
+      }
+    };
+
+    // State
+    let isPaused = false;
+    let showOrbits = true;
+    let showDistances = false;
+    let currentZoom = 100;
+    let currentSpeed = 1;
+
+    // Initialize stars
+    function createStars() {
+      const container = document.getElementById('stars');
+      container.innerHTML = '';
+      const starCount = 200;
+      
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        const size = Math.random() * 2 + 1;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+        star.style.setProperty('--base-opacity', Math.random() * 0.5 + 0.3);
+        container.appendChild(star);
+      }
+    }
+
+    // Initialize planet sizes and positions
+    function initializePlanets() {
+      const sun = document.getElementById('sun');
+      const earth = document.getElementById('earth');
+      const moon = document.getElementById('moon');
+      const mars = document.getElementById('mars');
+      
+      sun.style.width = '80px';
+      sun.style.height = '80px';
+      sun.style.marginLeft = '-40px';
+      sun.style.marginTop = '-40px';
+      
+      earth.style.width = '40px';
+      earth.style.height = '40px';
+      earth.style.marginLeft = '-20px';
+      earth.style.marginTop = '-20px';
+      
+      moon.style.width = '16px';
+      moon.style.height = '16px';
+      
+      mars.style.width = '32px';
+      mars.style.height = '32px';
+      mars.style.marginLeft = '-16px';
+      mars.style.marginTop = '-16px';
+      
+      // Orbit paths
+      const earthOrbit = document.getElementById('earth-orbit');
+      const marsOrbit = document.getElementById('mars-orbit');
+      
+      earthOrbit.style.width = '360px';
+      earthOrbit.style.height = '360px';
+      earthOrbit.style.marginLeft = '-180px';
+      earthOrbit.style.marginTop = '-180px';
+      
+      marsOrbit.style.width = '560px';
+      marsOrbit.style.height = '560px';
+      marsOrbit.style.marginLeft = '-280px';
+      marsOrbit.style.marginTop = '-280px';
+    }
+
+    // Update orbital animation speeds
+    function updateSpeed(speed) {
+      const root = document.documentElement;
+      const baseEarthYear = 20; // seconds for one orbit
+      const baseMoonMonth = 2;
+      const baseMarsYear = 37.6;
+      
+      if (speed === 0) {
+        root.style.setProperty('--earth-year', '999999s');
+        root.style.setProperty('--moon-month', '999999s');
+        root.style.setProperty('--mars-year', '999999s');
+      } else {
+        root.style.setProperty('--earth-year', (baseEarthYear / speed) + 's');
+        root.style.setProperty('--moon-month', (baseMoonMonth / speed) + 's');
+        root.style.setProperty('--mars-year', (baseMarsYear / speed) + 's');
+      }
+    }
+
+    // Show planet info
+    function showPlanetInfo(bodyId) {
+      const data = celestialData[bodyId];
+      if (!data) return;
+      
+      const infoPanel = document.getElementById('planet-info');
+      document.getElementById('planet-name').textContent = data.emoji + ' ' + data.name;
+      document.getElementById('planet-type').textContent = data.type;
+      
+      const dataContainer = document.getElementById('planet-data');
+      dataContainer.innerHTML = data.data.map(item => `
+        <div class="data-row flex justify-between py-2">
+          <span class="text-gray-400 text-sm">${item.label}</span>
+          <span class="text-blue-300 text-sm font-medium">${item.value}</span>
+        </div>
+      `).join('');
+      
+      document.getElementById('planet-description').textContent = data.description;
+      document.getElementById('fact-text').textContent = data.fact;
+      
+      infoPanel.classList.remove('hidden');
+      
+      // Hide educational panel on mobile when showing planet info
+      if (window.innerWidth < 768) {
+        document.getElementById('edu-panel').classList.add('hidden');
+      }
+    }
+
+    // Update distance lines
+    function updateDistanceLines() {
+      const container = document.getElementById('distance-lines');
+      container.innerHTML = '';
+      
+      if (!showDistances) return;
+      
+      const solarSystem = document.getElementById('solar-system');
+      const rect = solarSystem.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      // Earth distance from Sun
+      const earthLine = document.createElement('div');
+      earthLine.className = 'distance-line';
+      earthLine.style.left = centerX + 'px';
+      earthLine.style.top = centerY + 'px';
+      earthLine.style.width = '180px';
+      container.appendChild(earthLine);
+      
+      const earthLabel = document.createElement('div');
+      earthLabel.className = 'distance-label';
+      earthLabel.textContent = '1 UA (149,6 mi km)';
+      earthLabel.style.left = (centerX + 60) + 'px';
+      earthLabel.style.top = (centerY - 20) + 'px';
+      container.appendChild(earthLabel);
+      
+      // Mars distance from Sun
+      const marsLine = document.createElement('div');
+      marsLine.className = 'distance-line';
+      marsLine.style.left = centerX + 'px';
+      marsLine.style.top = (centerY + 10) + 'px';
+      marsLine.style.width = '280px';
+      container.appendChild(marsLine);
+      
+      const marsLabel = document.createElement('div');
+      marsLabel.className = 'distance-label';
+      marsLabel.textContent = '1.52 UA (228 mi km)';
+      marsLabel.style.left = (centerX + 120) + 'px';
+      marsLabel.style.top = (centerY + 15) + 'px';
+      container.appendChild(marsLabel);
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
+      // Planet clicks
+      document.querySelectorAll('.planet').forEach(planet => {
+        planet.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const bodyId = planet.dataset.body;
+          showPlanetInfo(bodyId);
+        });
+      });
+      
+      // Close info panel
+      document.getElementById('close-info').addEventListener('click', () => {
+        document.getElementById('planet-info').classList.add('hidden');
+      });
+      
+      // Zoom slider
+      document.getElementById('zoom-slider').addEventListener('input', (e) => {
+        currentZoom = e.target.value;
+        document.getElementById('zoom-value').textContent = currentZoom + '%';
+        document.getElementById('solar-system').style.transform = `scale(${currentZoom / 100})`;
+        updateDistanceLines();
+      });
+      
+      // Speed slider
+      document.getElementById('speed-slider').addEventListener('input', (e) => {
+        const val = e.target.value;
+        currentSpeed = val / 50; // 0 to 2
+        document.getElementById('speed-value').textContent = currentSpeed.toFixed(1) + 'x';
+        if (!isPaused) {
+          updateSpeed(currentSpeed);
+        }
+      });
+      
+      // Toggle orbits
+      document.getElementById('toggle-orbits').addEventListener('click', () => {
+        showOrbits = !showOrbits;
+        document.getElementById('earth-orbit').style.opacity = showOrbits ? '1' : '0';
+        document.getElementById('mars-orbit').style.opacity = showOrbits ? '1' : '0';
+        document.getElementById('toggle-orbits').style.borderColor = showOrbits ? 'rgba(100,150,255,0.6)' : 'rgba(100,150,255,0.2)';
+      });
+      
+      // Toggle distances
+      document.getElementById('toggle-distances').addEventListener('click', () => {
+        showDistances = !showDistances;
+        updateDistanceLines();
+        document.getElementById('toggle-distances').style.borderColor = showDistances ? 'rgba(100,150,255,0.6)' : 'rgba(100,150,255,0.2)';
+      });
+      
+      // Pause
+      document.getElementById('toggle-pause').addEventListener('click', () => {
+        isPaused = !isPaused;
+        const btn = document.getElementById('toggle-pause');
+        btn.innerHTML = isPaused ? '▶️ Retomar' : '⏸️ Pausar';
+        updateSpeed(isPaused ? 0 : currentSpeed);
+      });
+      
+      // About modal
+      document.getElementById('info-btn').addEventListener('click', () => {
+        document.getElementById('about-modal').classList.remove('hidden');
+        document.getElementById('about-modal').classList.add('flex');
+      });
+      
+      document.getElementById('close-modal').addEventListener('click', () => {
+        document.getElementById('about-modal').classList.add('hidden');
+        document.getElementById('about-modal').classList.remove('flex');
+      });
+      
+      document.getElementById('about-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'about-modal') {
+          document.getElementById('about-modal').classList.add('hidden');
+          document.getElementById('about-modal').classList.remove('flex');
+        }
+      });
+      
+      // Click outside to close info
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.planet') && !e.target.closest('#planet-info')) {
+          document.getElementById('planet-info').classList.add('hidden');
+        }
+      });
+    }
+
+    // Config change handler
+    async function onConfigChange(newConfig) {
+      config = { ...defaultConfig, ...newConfig };
+      
+      document.getElementById('main-title').textContent = config.main_title || defaultConfig.main_title;
+      document.getElementById('info-btn-text').textContent = config.info_button_text || defaultConfig.info_button_text;
+      
+      document.body.style.background = `radial-gradient(ellipse at center, ${config.background_color || defaultConfig.background_color} 0%, #000005 100%)`;
+    }
+
+    // Initialize
+    function init() {
+      createStars();
+      initializePlanets();
+      updateSpeed(1);
+      setupEventListeners();
+      
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (cfg) => ({
+          recolorables: [
+            {
+              get: () => cfg.background_color || defaultConfig.background_color,
+              set: (v) => { cfg.background_color = v; window.elementSdk.setConfig({ background_color: v }); }
+            },
+            {
+              get: () => cfg.surface_color || defaultConfig.surface_color,
+              set: (v) => { cfg.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); }
+            },
+            {
+              get: () => cfg.text_color || defaultConfig.text_color,
+              set: (v) => { cfg.text_color = v; window.elementSdk.setConfig({ text_color: v }); }
+            },
+            {
+              get: () => cfg.primary_action_color || defaultConfig.primary_action_color,
+              set: (v) => { cfg.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); }
+            },
+            {
+              get: () => cfg.secondary_action_color || defaultConfig.secondary_action_color,
+              set: (v) => { cfg.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); }
+            }
+          ],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (cfg) => new Map([
+          ['main_title', cfg.main_title || defaultConfig.main_title],
+          ['info_button_text', cfg.info_button_text || defaultConfig.info_button_text]
+        ])
+      });
+    }
+
+    init();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c761f97c69536ec',t:'MTc2OTk5NzkyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
